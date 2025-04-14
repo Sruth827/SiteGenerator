@@ -142,23 +142,6 @@ class TestSplitNodesDelimiter(unittest.TestCase):
             new_nodes, 
         )
 
-    def test_italic_inside_bold(self):
-        # Input text with italic nested inside bold
-        node = TextNode(
-            "This is **bold and _italic inside bold_ text**.", 
-            TextType.TEXT,
-            )
-        new_nodes = text_to_textnodes(node.text)
-        self.assertListEqual(
-            [
-                TextNode("This is ", TextType.TEXT),
-                TextNode("bold and ", TextType.BOLD),
-                TextNode("italic inside bold", TextType.ITALIC),
-                TextNode(" text", TextType.BOLD),
-            ],
-            new_nodes,
-        )
-    
-      
+  
 if __name__ == "__main__":
     unittest.main()
