@@ -1,6 +1,8 @@
 from textnode import TextNode, TextType
 
 def text_node_to_html_node(text_node):
+    new_leaf = None
+
     if text_node.text_type == None:
         raise Exception("no TextType")
     elif text_node.text_type == TextType.TEXT:
@@ -26,7 +28,20 @@ class HTMLNode():
         self.props = Props if Props else {}
 
     def to_html(self):
-        raise NotImplementedError() 
+        if self.children is None or len(self.children) == 0:
+            if self.value is None:
+                return f"<{self.tag}></{self.tag}>"
+            else: 
+                return f"<{self.tag}>{self.value}</{self.tag}>"
+        else: 
+            children_html = ""
+            for child in self.children:
+                children_html += child.to_html()
+
+            if self.value is None:
+                return f"<{self.tag}>{children_html}</{self.tag}>"
+            else: 
+                return f"<{self.tag}>{self.value}{children_html}</{self.tag}>"
     
     def props_to_html(self):
         return " ".join(f'{key}="{value}"' for key, value in self.props.items())
