@@ -1,5 +1,7 @@
 import unittest
 from splitblock import markdown_to_blocks, block_to_block_type, BlockType, markdown_to_html_node, text_to_children
+from textnode import *
+from htmlnode import *
 
 class TestMarkdownParser(unittest.TestCase):
     def test_markdown_to_blocks(self):
@@ -83,6 +85,60 @@ the **same** even with inline stuff
             html,
         "<div><pre><code>This is text that _should_ remain\nthe **same** even with inline stuff\n</code></pre></div>",
         )
+
+    def test_headings(self):
+        md = """
+# Heading 1
+## Heading 2 with **bold**
+### Heading 3 with `code`
+"""
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+        html,
+        "<div><h1>Heading 1</h1><h2>Heading 2 with <b>bold</b></h2><h3>Heading 3 with <code>code</code></h3></div>"
+        )
+
+
+    def test_quote(self):
+        md = """
+>This is a quote
+>It can span multiple lines
+"""
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+        html,
+        "<div><blockquote>This is a quote It can span multiple lines</blockquote></div>"
+        )
+
+    def test_ordered(self):
+        md = """
+1. First item
+2. Second item
+3. Third item
+"""
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+        html,
+        "<div><ol><li>First item</li><li>Second item</li><li>Third item</li></ol></div>"
+        )
+
+    def test_unordered(self):
+        md = """
+* First item
+* Second item
+* Third item
+"""
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+        html,
+        "<div><ul><li>First item</li><li>Second item</li><li>Third item</li></ul></div>"
+        )
+
+
 
 if __name__ == "__main__":
     unittest.main()
