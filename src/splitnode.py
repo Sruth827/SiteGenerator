@@ -29,7 +29,7 @@ def split_node_delimiter(old_nodes, delimiter, text_type):
 
 def extract_markdown_bold(text):
     matches = []
-    for match in re.finditer(r"\*\*(.*)\*\*", text):
+    for match in re.finditer(r"\*\*(.*?)\*\*", text):
         matches.append((match.group(1), match.start(), match.end()))
     return matches
 

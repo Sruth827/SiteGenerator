@@ -1,6 +1,6 @@
 import os
 import shutil 
-
+import sys
 from textnode import *
 from utils import generate_pages_recursive
 
@@ -35,16 +35,18 @@ def recursive_file_copy(destination_dir, source_dir):
 
 
 def main(): 
-    newnode = TextNode("this is some anchor text", TextType.LINK, "https://www.sean.com/")
-    print(newnode)
-    
+    if len(sys.argv) > 1:
+        basepath = sys.argv[1]
+    else:
+        basepath = "/"
+
 
     source = os.path.expanduser("~/SiteGenerator/static")
-    destination = os.path.expanduser("~/SiteGenerator/public")
+    destination = os.path.expanduser("~/SiteGenerator/docs")
     template = os.path.expanduser("~/SiteGenerator/template.html")
     content = os.path.expanduser("~/SiteGenerator/content")
     recursive_file_copy(destination, source)
-    generate_pages_recursive(content, template, destination) 
+    generate_pages_recursive(content, template, destination, basepath) 
 
 if __name__ == "__main__":
     main()
