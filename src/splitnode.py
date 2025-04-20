@@ -182,7 +182,7 @@ def split_nodes_image(nodes):
         
         for alt_text, url in matches:
             # Construct the full markdown image syntax
-            markdown = f"[{alt_text}]({url})"
+            markdown = f"![{alt_text}]({url})"
             # Find position of this markdown in the remaining text
             start_idx = remaining_text.find(markdown)
             
@@ -198,7 +198,7 @@ def split_nodes_image(nodes):
             
             last_idx = start_idx + len(markdown)        
         # Add any remaining text
-        if last_idc < len(remaining_text):
+        if last_idx < len(remaining_text):
             result.append(TextNode(remaining_text[last_idx:], TextType.TEXT))
     return result
 
