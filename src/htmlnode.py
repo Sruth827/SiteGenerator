@@ -1,23 +1,29 @@
 from textnode import TextNode, TextType
 
 def text_node_to_html_node(text_node):
-    new_leaf = None
-
-    if text_node.text_type == None:
-        raise Exception("no TextType")
-    elif text_node.text_type == TextType.TEXT:
-        new_leaf = LeafNode(None, text_node.text)
+    if not isinstance(text_node, TextNode):
+        raise TypeError("Expected a TextNode instance")
+    if text_node.text_type is None:
+        raise ValueError("TextNode must have a valid TextType")
+    
+    if text_node.text_type == TextType.TEXT:
+        return LeafNode(None, text_node.text)
     elif text_node.text_type == TextType.BOLD:
-        new_leaf = LeafNode("b", text_node.text)
+        return LeafNode("b", text_node.text)
     elif text_node.text_type == TextType.ITALIC:
-        new_leaf = LeafNode("i", text_node.text)
+        return LeafNode("i", text_node.text)
     elif text_node.text_type == TextType.CODE:
-         new_leaf = LeafNode("code", text_node.text)
+        return LeafNode("code", text_node.text)
     elif text_node.text_type == TextType.LINK:
-        new_leaf = LeafNode("a", text_node.url, "href")
+        if not text_node.url:
+            raise ValueError("Link TextNode must have a URL")
+        return LeafNode("a", text_node.text, {"href": text_node.url})
     elif text_node.text_type == TextType.IMAGE:
-        new_leaf = LeafNode("img", "", {"src", "alt"})
-    return new_leaf
+        if not text_node.url:
+            raise ValueError("Image TextNode must have a URL")
+        return LeafNode("img", None, {"src": text_node.url, "alt": text_node.text})
+    else:
+        raise ValueError(f"Unsupported TextType: {text_node.text_type}")
 
 
 class HTMLNode():
@@ -28,26 +34,26 @@ class HTMLNode():
         self.props = Props if Props else {}
 
     def to_html(self):
-        if self.children is None or len(self.children) == 0:
-            if self.value is None:
-                return f"<{self.tag}></{self.tag}>"
-            else: 
-                return f"<{self.tag}>{self.value}</{self.tag}>"
-        else: 
-            children_html = ""
-            for child in self.children:
-                children_html += child.to_html()
+        # convert props to a string (e.g., 'href="..." target="_blank"')
+        props_string = self.props_to_html()
+        props_string = f" {props_string}" if props_string else ""
 
-            if self.value is None:
-                return f"<{self.tag}>{children_html}</{self.tag}>"
-            else: 
-                return f"<{self.tag}>{self.value}{children_html}</{self.tag}>"
+        # andle self-closing tags if there are no children and no value
+        if not self.children and not self.value:
+            return f"<{self.tag}{props_string} />"
+
+        # generate children HTML (if any)
+        children_html = "".join(child.to_html() for child in self.children)  
+        # default to empty list if no children
+
+        # Render the tag
+        return f"<{self.tag}{props_string}>{self.value or ''}{children_html}</{self.tag}>"
     
     def props_to_html(self):
-        return " ".join(f'{key}="{value}"' for key, value in self.props.items())
+        return " ".join(f"{key}='{value}'" for key, value in self.props.items())
 
     def __repr__(self):
-        return f"HTMLNODE({self.tag}, {self.value}, {self.children}, {self.props_to_html})"
+        return f"HTMLNODE({self.tag}, {self.value}, {self.children}, {self.props})"
 
 
 class ParentNode(HTMLNode):
@@ -55,13 +61,11 @@ class ParentNode(HTMLNode):
         super().__init__(tag, None, children, props)
 
     def to_html(self):
-        if self.tag == False:
+        if self.tag == None:
             raise ValueError("need tag to initialize")
-        if self.children == False:
+        if self.children == None:
             raise ValueError("need children to initialize")
-        tree_string = f"<{self.tag}>{
-                            ''.join(child.to_html() for child in self.children)
-                            }</{self.tag}>"
+        tree_string = f"<{self.tag}>{''.join(child.to_html() for child in self.children)}</{self.tag}>"
         return tree_string
 
 
@@ -72,9 +76,20 @@ class LeafNode(HTMLNode):
         super().__init__( tag, value, None, props)
         
     def to_html(self):
-        if self.value == False:
+        if self.value == None:
             raise ValueError()
+        
+        attributes = ""
+        if self.props:
+            attributes = " " + " ".join(f'{key}="{value}"' for key, value in self.props.items())
+
         if self.tag == None:
             return f"{self.value}"
-        return f"<{self.tag}>{self.value}</{self.tag}>"
+        
+        if self.tag in ["img", "br", "hr"]:
+            return f"<{self.tag}{attributes}/>"
+
+        return f"<{self.tag}{attributes}>{self.value}</{self.tag}>"
+
+        
 

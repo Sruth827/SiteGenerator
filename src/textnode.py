@@ -9,10 +9,15 @@ class TextType(Enum):
     IMAGE = "Image"
 
 class TextNode():
-    def __init__(self, text, TextType, URL=None):
+    def __init__(self, text, text_type, URL=None):
         self.text = text 
-        self.text_type = TextType     
+        self.text_type = text_type     
         self.url = URL 
+
+        if not isinstance(text_type, TextType):
+            raise ValueError(f"Invalid TextType: {text_type}")
+        if text_type in {TextType.LINK, TextType.IMAGE} and not URL:
+            raise ValueError(f"URL is required for TextType: {text_type}")
 
     def __eq__(self, other):
         if not isinstance(other, TextNode):

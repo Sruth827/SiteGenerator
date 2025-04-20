@@ -41,13 +41,20 @@ def extract_markdown_italic(text):
 
 def extract_markdown_code(text):
     matches = []
-    for match in re.finditer(r"`(.*)`", text):
-        matches.append((match.group(1), match.start(), match.end()))
-    return matches 
+    # Use a regex that finds each code block separately
+    pattern = r"`([^`]+)`"
+    
+    for match in re.finditer(pattern, text):
+        code_text = match.group(1)
+        start = match.start()
+        end = match.end()
+        matches.append((code_text, start, end))
+    
+    return matches
 
 def extract_markdown_images(text):
     matches = []
-    pattern = r"!\[(.*?)\]\((.*?)\)"
+    pattern = r"!\[([^\]]+)\]\(([^)]+)\)"
     for match in re.finditer(pattern, text):
         alt_text = match.group(1)
         url = match.group(2)
@@ -127,25 +134,32 @@ def split_nodes_code(old_nodes):
         if node.text_type != TextType.TEXT:
             new_list.append(node)
             continue
+        
         matches = extract_markdown_code(node.text)
         if not matches:
             new_list.append(node)
             continue
 
-        text = node.text
-        for code_text, start, end in matches:
-            # Extract the part before the match
-            before_text = text[:start]
-            # Update text to be everything after the match
-            text = text[end:]
-            
-            if before_text:
-                new_list.append(TextNode(before_text, TextType.TEXT))
-            new_list.append(TextNode(code_text, TextType.CODE))
+        # Sort matches by start position to ensure we process them in order
+        matches.sort(key=lambda x: x[1])
         
-        # Add any remaining text
-        if text:
-            new_list.append(TextNode(text, TextType.TEXT))
+        curr_index = 0
+        for code_text, start, end in matches:
+            # Add text before the code block
+            if start > curr_index:
+                before_text = node.text[curr_index:start]
+                new_list.append(TextNode(before_text, TextType.TEXT))
+            
+            # Add the code block
+            new_list.append(TextNode(code_text, TextType.CODE))
+            
+            # Update current index
+            curr_index = end
+        
+        # Add any remaining text after the last match
+        if curr_index < len(node.text):
+            remaining_text = node.text[curr_index:]
+            new_list.append(TextNode(remaining_text, TextType.TEXT))
                         
     return new_list
 
@@ -159,40 +173,33 @@ def split_nodes_image(nodes):
             
         matches = extract_markdown_images(node.text)
         if not matches:
-            result.append(node)
+            result.append(TextNode(node.text, TextType.TEXT))
             continue
         
         # Start with the original text
         remaining_text = node.text
-        current_idx = 0
+        last_idx = 0
         
-        while matches and remaining_text:
-            alt_text, url = matches[0]
+        for alt_text, url in matches:
             # Construct the full markdown image syntax
-            markdown = f"![{alt_text}]({url})"
+            markdown = f"[{alt_text}]({url})"
             # Find position of this markdown in the remaining text
             start_idx = remaining_text.find(markdown)
             
             if start_idx == -1:
-                # This match is no longer in the remaining text
-                matches.pop(0)
                 continue
             
             # Add text before the image if any
-            if start_idx > 0:
-                result.append(TextNode(remaining_text[:start_idx], TextType.TEXT))
+            if start_idx > last_idx:
+                result.append(TextNode(remaining_text[last_idx:start_idx], TextType.TEXT))
             
             # Add the image node
             result.append(TextNode(alt_text, TextType.IMAGE, url))
             
-            # Update remaining_text to be everything after the markdown
-            remaining_text = remaining_text[start_idx + len(markdown):]
-            matches.pop(0)
-        
+            last_idx = start_idx + len(markdown)        
         # Add any remaining text
-        if remaining_text:
-            result.append(TextNode(remaining_text, TextType.TEXT))
-    
+        if last_idc < len(remaining_text):
+            result.append(TextNode(remaining_text[last_idx:], TextType.TEXT))
     return result
 
 def split_nodes_link(nodes):
@@ -209,34 +216,32 @@ def split_nodes_link(nodes):
         
         # Start with the original text
         remaining_text = node.text
-        current_idx = 0
+        last_idx = 0
 
-        while matches and remaining_text:
-            alt_text, url = matches[0]
+        for alt_text, url in matches:
             # Construct the full markdown image syntax
+
             markdown = f"[{alt_text}]({url})"
             # Find position of this markdown in the remaining text
             start_idx = remaining_text.find(markdown)
             
             if start_idx == -1:
-                # This match is no longer in the remaining text
-                matches.pop(0)
+
                 continue
             
             # Add text before the image if any
-            if start_idx > 0:
-                result.append(TextNode(remaining_text[:start_idx], TextType.TEXT))
+            if start_idx > last_idx:
+                result.append(TextNode(remaining_text[last_idx:start_idx], TextType.TEXT))
             
-            # Add the image node
+            # Add the link node
             result.append(TextNode(alt_text, TextType.LINK, url))
             
             # Update remaining_text to be everything after the markdown
-            remaining_text = remaining_text[start_idx + len(markdown):]
-            matches.pop(0)
-        
+            last_idx = start_idx + len(markdown)
+
         # Add any remaining text
-        if remaining_text:
-            result.append(TextNode(remaining_text, TextType.TEXT))
+        if last_idx < len(remaining_text):
+            result.append(TextNode(remaining_text[last_idx:], TextType.TEXT))
     
     return result
  
