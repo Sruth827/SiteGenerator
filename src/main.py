@@ -36,7 +36,7 @@ def recursive_file_copy(destination_dir, source_dir):
 
 def main(): 
     if len(sys.argv) > 1:
-        basepath = sys.argv[1]
+        basepath = sys.argv[1].rstrip("/") + "/"
     else:
         basepath = "/"
 
@@ -45,8 +45,12 @@ def main():
     destination = os.path.expanduser("~/SiteGenerator/docs")
     template = os.path.expanduser("~/SiteGenerator/template.html")
     content = os.path.expanduser("~/SiteGenerator/content")
-    recursive_file_copy(destination, source)
-    generate_pages_recursive(content, template, destination, basepath) 
+    try:
+        recursive_file_copy(destination, source)
+        generate_pages_recursive(content, template, destination, basepath)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
 
 if __name__ == "__main__":
     main()

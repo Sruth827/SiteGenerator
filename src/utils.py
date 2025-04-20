@@ -59,7 +59,7 @@ def generate_page(from_path, template_path, dest_path, basepath):
         with open(template_path) as f:
             template_text = f.read()
     else: 
-        raise FileNotFoundError(f"Template File not found at {tempate_path}")
+        raise FileNotFoundError(f"Template File not found at {template_path}")
     print(f"Template content loaded: {template_text[:100]}")
 
     #convert markdown to HTML format
