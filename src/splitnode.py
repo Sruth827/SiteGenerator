@@ -54,11 +54,12 @@ def extract_markdown_code(text):
 
 def extract_markdown_images(text):
     matches = []
-    pattern = r"!\[([^\]]+)\]\(([^)]+)\)"
+    pattern = r"(!)?\[([^\]]+)\]\(([^)]+)\)"
     for match in re.finditer(pattern, text):
-        alt_text = match.group(1)
-        url = match.group(2)
-        matches.append((alt_text, url))  # Just return text and URL
+        is_image = match.group(1)
+        alt_text = match.group(2)
+        url = match.group(3)
+        matches.append((is_image, alt_text, url))  # Just return text and URL
     return matches
 
 def extract_markdown_links(text):
@@ -164,43 +165,35 @@ def split_nodes_code(old_nodes):
     return new_list
 
 
-def split_nodes_image(nodes):
-    result = []
-    for node in nodes:
-        if node.text_type != TextType.TEXT:
-            result.append(node)
-            continue
-            
-        matches = extract_markdown_images(node.text)
-        if not matches:
-            result.append(TextNode(node.text, TextType.TEXT))
-            continue
-        
-        # Start with the original text
-        remaining_text = node.text
-        last_idx = 0
-        
-        for alt_text, url in matches:
-            # Construct the full markdown image syntax
-            markdown = f"![{alt_text}]({url})"
-            # Find position of this markdown in the remaining text
-            start_idx = remaining_text.find(markdown)
-            
-            if start_idx == -1:
-                continue
-            
-            # Add text before the image if any
-            if start_idx > last_idx:
-                result.append(TextNode(remaining_text[last_idx:start_idx], TextType.TEXT))
-            
-            # Add the image node
-            result.append(TextNode(alt_text, TextType.IMAGE, url))
-            
-            last_idx = start_idx + len(markdown)        
-        # Add any remaining text
-        if last_idx < len(remaining_text):
-            result.append(TextNode(remaining_text[last_idx:], TextType.TEXT))
-    return result
+def split_nodes_image(text):
+    nodes = []
+    remaining_text = text
+
+    # Regex for images with optional "!"
+    pattern = r"(!)?\[([^\]]+)\]\(([^)]+)\)"
+    last_idx = 0
+
+    for match in re.finditer(pattern, text):
+        is_image = match.group(1) == "!"  # True for images, False for links
+        label = match.group(2)  # Alt text or link text
+        url = match.group(3)  # URL
+        start_idx = match.start()
+
+        # Add preceding text as a TEXT node
+        if start_idx > last_idx:
+            nodes.append(TextNode(text[last_idx:start_idx], TextType.TEXT))
+
+        # Add node only if it's an image
+        if is_image:
+            nodes.append(TextNode(label, TextType.IMAGE, url))
+
+        last_idx = match.end()
+
+    # Add any remaining text as a TEXT node
+    if last_idx < len(text):
+        nodes.append(TextNode(text[last_idx:], TextType.TEXT))
+
+    return nodes
 
 def split_nodes_link(nodes):
     result = []
