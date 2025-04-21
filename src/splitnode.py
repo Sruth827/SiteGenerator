@@ -249,8 +249,13 @@ def split_nodes_link(nodes):
 def text_to_textnodes(text):
     nodes = [TextNode(text, TextType.TEXT)]
     nodes = split_nodes_image(nodes)
+    print(f"nodes after split_nodes_image: {nodes}")
     nodes = split_nodes_link(nodes)
+    print(f"nodes after split_nodes_link: {nodes}")
     nodes = split_nodes_bold(nodes)
+    print(f"nodes after split_nodes_blod: {nodes}")
     nodes = split_nodes_italic(nodes)
+    print(f"nodes after split_nodes_italic: {nodes}")
     nodes = split_nodes_code(nodes)
+    print(f"nodes after split_nodes_code: {nodes}")
     return nodes

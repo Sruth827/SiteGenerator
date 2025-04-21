@@ -17,7 +17,7 @@ def text_node_to_html_node(text_node):
     elif text_node.text_type == TextType.LINK:
         if not text_node.url:
             raise ValueError("Link TextNode must have a URL")
-        return LeafNode("img", text_node.text, {"href": text_node.url})
+        return LeafNode("a", text_node.text, {"href": text_node.url})
     elif text_node.text_type == TextType.IMAGE:
         if not text_node.url:
             raise ValueError("Image TextNode must have a URL")
