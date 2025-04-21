@@ -165,35 +165,41 @@ def split_nodes_code(old_nodes):
     return new_list
 
 
-def split_nodes_image(text):
-    nodes = []
-    remaining_text = text
+def split_nodes_image(old_nodes):
+    new_list = []  # Modified list of nodes
 
-    # Regex for images with optional "!"
-    pattern = r"(!)?\[([^\]]+)\]\(([^)]+)\)"
-    last_idx = 0
+    for node in old_nodes:
+        # If the node is not of type TEXT, add it directly to the new list
+        if node.text_type != TextType.TEXT:
+            new_list.append(node)
+            continue
 
-    for match in re.finditer(pattern, text):
-        is_image = match.group(1) == "!"  # True for images, False for links
-        label = match.group(2)  # Alt text or link text
-        url = match.group(3)  # URL
-        start_idx = match.start()
+        text = node.text
+        pattern = r"(!)?\[([^\]]+)\]\(([^)]+)\)"
+        last_idx = 0
 
-        # Add preceding text as a TEXT node
-        if start_idx > last_idx:
-            nodes.append(TextNode(text[last_idx:start_idx], TextType.TEXT))
+        # Use regex to find all matches for markdown images or links
+        for match in re.finditer(pattern, text):
+            is_image = match.group(1) == "!"  # True for images, False for links
+            label = match.group(2)  # Alt text or link text
+            url = match.group(3)  # URL
+            start_idx = match.start()
 
-        # Add node only if it's an image
-        if is_image:
-            nodes.append(TextNode(label, TextType.IMAGE, url))
+            # Add preceding text as a TEXT node
+            if start_idx > last_idx:
+                new_list.append(TextNode(text[last_idx:start_idx], TextType.TEXT))
 
-        last_idx = match.end()
+            # Add image nodes (only if `is_image` is True)
+            if is_image:
+                new_list.append(TextNode(label, TextType.IMAGE, url))
+
+            last_idx = match.end()
 
     # Add any remaining text as a TEXT node
-    if last_idx < len(text):
-        nodes.append(TextNode(text[last_idx:], TextType.TEXT))
+        if last_idx < len(text):
+            new_list.append(TextNode(text[last_idx:], TextType.TEXT))
 
-    return nodes
+    return new_list
 
 def split_nodes_link(nodes):
     result = []
